@@ -1,0 +1,33 @@
+{
+  "name": "bid",
+  "version": "0.0.1",
+  "description": "User authorization with Bitcoin message signing",
+  "main": "bid.js",
+  "scripts": {
+    "test": "bmocha --reporter spec test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pinheadmz/bid.git"
+  },
+  "keywords": [
+    "bcoin",
+    "bitcoin",
+    "slip13",
+    "bitid"
+  ],
+  "peerDependencies": {
+    "bcoin": "bcoin-org/bcoin"
+  },
+  "author": "Matthew Zipkin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pinheadmz/bid/issues"
+  },
+  "homepage": "https://github.com/pinheadmz/bid#readme",
+  "dependencies": {
+    "bcrypto": "^4.1.0",
+    "bsert": "0.0.10",
+    "bufio": "^1.0.6"
+  }
+}
