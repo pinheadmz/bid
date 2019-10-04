@@ -26,7 +26,7 @@ GET https://purse.io/loginchallenge
 ```
 
 2. Server generates a challenge consisting of a 32-byte random string and a
-'visual' string for the user to "ok":
+"visual" string for the user to "ok":
 
 ```js
 const challenge = new Challenge({
@@ -41,7 +41,7 @@ challenge:
 ```js
 const bid = new BID({
   identity: 'https://purse.io/loginchallenge',
-  mnemonic: 'abandon abandon abandon abandon abandon abandon abandon abandon  abandon abandon abandon about'
+  mnemonic: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
 });
 
 const sig = bid.signChallenge(challenge)
