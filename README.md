@@ -2,6 +2,21 @@ Implementation of
 [SLIP-13](https://github.com/satoshilabs/slips/blob/master/slip-0013.md)
 for use with bcoin.
 
+### Installation
+
+[`bcoin`](https://github.com/bcoin-org/bcoin) is added as a peer dependency, this package assumes bcoin is installed
+globally and requireable. Besides that:
+
+```
+git clone https://github.com/pinheadmz/bid
+cd bid
+npm i
+```
+
+```js
+const {BID, Challenge, Response} = require('bid');
+```
+
 ### Protocol
 
 1. Client requests login challenge:
@@ -40,6 +55,10 @@ const response = new Response({
   publicKey: bid.getPublicKey(),
   signature: sig
 });
+```
+
+```
+PUT https://purse.io/loginchallenge --data <reponse as JSON>
 ```
 
 5. Server verifies the response:
