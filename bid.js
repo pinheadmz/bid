@@ -32,18 +32,24 @@ class BID {
   }
 
   fromOptions(options) {
-    if (options.identity) {
+    if (options.identity != null) {
+      assert(typeof options.identity === 'string', 'Identity must be string');
       this.identity = options.identity;
     }
 
-    if (options.mnemonic) {
+    if (options.mnemonic != null) {
+      assert(typeof options.mnemonic === 'string', 'Mnemonic must be string');
       this.mnemonic = options.mnemonic;
       const mne = hd.Mnemonic.fromPhrase(this.mnemonic);
       this.master = hd.fromMnemonic(mne);
     }
 
-    if (options.publicKey) {
-      this.publicKey = Buffer.from(options.publicKey, 'hex');
+    if (options.publicKey != null) {
+      if (!Buffer.isBuffer(options.publicKey))
+        options.publicKey = Buffer.from(options.publicKey, 'hex');
+      assert(options.publicKey.byteLength === 33,
+        'Public key must be 33 bytes');
+      this.publicKey = options.publicKey;
     }
 
     return this;
@@ -51,6 +57,9 @@ class BID {
 
   getIdentityHash() {
     if (!this._identityHash) {
+      assert(typeof this.index === 'number', 'Identity index must be a number');
+      assert(typeof this.identity === 'string', 'Identity must be a string');
+
       const bw = bufio.write();
       bw.writeU32(this.index);
       bw.writeString(this.identity, 'utf8');
@@ -63,6 +72,10 @@ class BID {
 
   getPath() {
     const hash = this.getIdentityHash();
+
+    assert(Buffer.isBuffer(hash), 'Identity hash must be buffer');
+    assert(hash.byteLength === 32, 'Identity hash must be 32 bytes');
+
     // Ensure all values are BIP32 hardened, unsigned ints
     const purpose = (13 | 0x80000000) >>> 0;
     const A = (hash.readUInt32LE(0) | 0x80000000) >>> 0;
@@ -75,6 +88,8 @@ class BID {
 
   getPrivateKey() {
     if (!this.privateKey) {
+      assert (this.master, 'Master key required to derive private key');
+
       const path = this.getPath();
       this.privateKey = this.master.derivePath(path).privateKey;
     }
@@ -84,6 +99,8 @@ class BID {
 
   getPublicKey() {
     if (!this.publicKey) {
+      assert(this.master, 'Master key required to derive public key');
+
       const path = this.getPath();
       this.publicKey = this.master.derivePath(path).toPublic().publicKey;
     }
@@ -104,6 +121,14 @@ class BID {
   signChallenge(challenge) {
     const pub = this.getPublicKey();
     const prv = this.getPrivateKey();
+
+    assert(Buffer.isBuffer(pub), 'Public key must be a buffer');
+    assert(Buffer.isBuffer(prv), 'Private key must be a buffer');
+    assert(Buffer.isBuffer(challenge.sigHash), 'sigHash key must be a buffer');
+    assert(pub.byteLength === 33, 'Public key must be 33 bytes');
+    assert(prv.byteLength === 32, 'Private key must be 32 bytes');
+    assert(challenge.sigHash.byteLength === 32, 'sigHash must be 32 bytes');
+
     const compress = 0x04 !== pub.readInt8(0);
     const [s, r] =
       secp256k1.signRecoverable(challenge.sigHash, prv);
@@ -146,17 +171,24 @@ class BID {
 
 class Challenge {
   constructor(options) {
-    this.prefix = 'Bitcoin Signed Message:\n';
+    if (!Buffer.isBuffer(options.hidden))
+      this.hidden = Buffer.from(options.hidden, 'hex');
+    else
+      this.hidden = options.hidden;
+    assert(this.hidden.byteLength === 32,
+      'Hidden string must be 32 bytes');
 
-    this.hidden = Buffer.from(options.hidden, 'hex');
+    assert(typeof options.visual === 'string',
+      'Visual challenge must be string');
     this.visual = Buffer.from(options.visual, 'utf8');
 
     const data = bufio.write();
     data.writeHash(sha256.digest(this.hidden));
     data.writeHash(sha256.digest(this.visual));
 
+    const prefix = 'Bitcoin Signed Message:\n';
     const msg = bufio.write();
-    msg.writeVarString(this.prefix);
+    msg.writeVarString(prefix);
     msg.writeVarBytes(data.render());
 
     this.sigHash = sha256.digest(sha256.digest(msg.render()));
@@ -165,6 +197,18 @@ class Challenge {
 
 class Response {
   constructor(options) {
+    assert(typeof options.address === 'string', 'Address required');
+
+    if (!Buffer.isBuffer(options.publicKey))
+      options.publicKey = Buffer.from(options.publicKey, 'hex');
+    assert(options.publicKey.byteLength === 33,
+      'Public key must be 33 bytes');
+
+    if (!Buffer.isBuffer(options.signature))
+      options.signature = Buffer.from(options.signature, 'hex');
+    assert(options.signature.byteLength === 65,
+      'Signature must be 65 bytes');
+
     this.address = options.address;
     this.publicKey = options.publicKey.toString('hex');
     this.signature = options.signature.toString('hex');
